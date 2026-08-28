@@ -19,8 +19,6 @@
     "dotenv": "^17.4.2",
     "hono": "^4.13.4",
     "sharp": "^0.35.4",
-    "sqlite": "^5.1.1",
-    "sqlite3": "^6.0.1",
     "typescript": "^7.0.2"
   },
   "devDependencies": {

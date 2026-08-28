@@ -31,39 +31,39 @@ export async function runPipeline(
   copyStyle?: CopyStyle,
   onProgress?: (msg: string) => void
 ): Promise<void> {
-  const log = async (status: any, msg: string) => {
+  const log = (status: any, msg: string) => {
     console.log(`[Task ${taskId}] ${status}: ${msg}`);
-    await updateTaskStatus(taskId, status, msg);
+    updateTaskStatus(taskId, status, msg);
     onProgress?.(msg);
   };
 
   try {
     // ========== 步骤 1：商品视觉理解 ==========
-    await log('analyzing', '正在分析商品图片...');
+    log('analyzing', '正在分析商品图片...');
     const productInfo = await analyzeProduct(imageUrl);
-    await updateTaskData(taskId, { productInfo });
-    await log('prompting', `商品识别完成: ${productInfo.category} / ${productInfo.color} / ${productInfo.material}`);
+    updateTaskData(taskId, { productInfo });
+    log('prompting', `商品识别完成: ${productInfo.category} / ${productInfo.color} / ${productInfo.material}`);
 
     // ========== 步骤 2：生成 Prompt ==========
     const promptGroups = generatePrompts(productInfo, scenes, style);
     const sceneNames = promptGroups.map(p => p.sceneName);
-    await log('prompting', `已生成 ${promptGroups.length} 组场景 Prompt: ${sceneNames.join(', ')}`);
+    log('prompting', `已生成 ${promptGroups.length} 组场景 Prompt: ${sceneNames.join(', ')}`);
 
     let images: any[] = [];
     let copywriting: any = null;
 
     // ========== 步骤 3：文案生成（与图片生成并行） ==========
-    await log('prompting', '正在生成营销文案...');
+    log('prompting', '正在生成营销文案...');
     const copywritingPromise = generateCopywriting(productInfo, sceneNames, copyStyle)
-      .then(async cw => {
+      .then(cw => {
         copywriting = cw;
-        await updateTaskData(taskId, { copywriting: cw });
-        await log('prompting', '营销文案生成完成');
+        updateTaskData(taskId, { copywriting: cw });
+        log('prompting', '营销文案生成完成');
         return cw;
       })
-      .catch(async err => {
+      .catch(err => {
         console.error(`[Task ${taskId}] 文案生成失败:`, err);
-        await log('prompting', '文案生成失败，跳过');
+        log('prompting', '文案生成失败，跳过');
         return null;
       });
 
@@ -73,11 +73,11 @@ export async function runPipeline(
         ? '开始生成场景图（万相2.7图像编辑）...'
         : `开始生成场景图（${getStyleLabel(style)}风格）...`
       );
-      images = await generateImages(promptGroups, imageUrl, size, async (msg) => {
-        await log('generating_images', msg);
+      images = await generateImages(promptGroups, imageUrl, size, (msg) => {
+        log('generating_images', msg);
       });
-      await updateTaskData(taskId, { images });
-      await log('generating_images', `场景图生成完成，共 ${images.length} 张`);
+      updateTaskData(taskId, { images });
+      log('generating_images', `场景图生成完成，共 ${images.length} 张`);
     }
 
     // 确保文案也完成了
@@ -89,11 +89,11 @@ export async function runPipeline(
 
       let videoInputImage;
       if (mode === 'video' && images.length === 0) {
-        await log('generating_images', '先生成1张场景图作为视频素材...');
+        log('generating_images', '先生成1张场景图作为视频素材...');
         const singlePrompt = promptGroups.find(p => p.sceneName !== '简约白底') || promptGroups[0];
         const singleImages = await generateImages([singlePrompt], imageUrl, size);
         images = singleImages;
-        await updateTaskData(taskId, { images });
+        updateTaskData(taskId, { images });
         videoInputImage = singleImages[0];
       } else {
         videoInputImage = images.find(img => img.sceneName !== '简约白底') || images[0];
@@ -101,16 +101,16 @@ export async function runPipeline(
 
       let video;
       try {
-        video = await generateVideoWithWanx(videoInputImage, async (msg) => {
-          await log('generating_video', msg);
+        video = await generateVideoWithWanx(videoInputImage, (msg) => {
+          log('generating_video', msg);
         });
       } catch (videoError) {
         console.error(`[Task ${taskId}] 视频生成失败:`, videoError);
-        await log('generating_video', '视频生成失败，跳过');
+        log('generating_video', '视频生成失败，跳过');
       }
 
       if (video) {
-        await updateTaskData(taskId, { video });
+        updateTaskData(taskId, { video });
       }
     }
 
@@ -121,16 +121,16 @@ export async function runPipeline(
     if (mode === 'video' || mode === 'all') {
       parts.push('视频');
     }
-    await log('completed', `素材生成完成！${parts.join(' + ')}`);
+    log('completed', `素材生成完成！${parts.join(' + ')}`);
 
     // 保存历史记录
-    const finalTask = await getTask(taskId);
+    const finalTask = getTask(taskId);
     if (finalTask) {
-      await saveHistory(finalTask as any, scenes, mode, size);
+      saveHistory(finalTask as any, scenes, mode, size);
     }
 
   } catch (error: any) {
-    await log('failed', `流程失败: ${error.message}`);
+    log('failed', `流程失败: ${error.message}`);
     throw error;
   }
 }
@@ -138,16 +138,16 @@ export async function runPipeline(
 /**
  * 创建并启动一个生成任务
  */
-export async function startTask(
+export function startTask(
   imageUrl: string,
   mode: GenerateMode = 'all',
   scenes?: SceneSelection[],
   size: SizeOption = '1024*1024',
   style: ArtStyle = 'realistic',
   copyStyle?: CopyStyle
-): Promise<string> {
+): string {
   const taskId = randomUUID();
-  await createTask(taskId, imageUrl);
+  createTask(taskId, imageUrl);
 
   // 异步启动，不阻塞 API 响应
   runPipeline(taskId, imageUrl, mode, scenes, size, style, copyStyle).catch((err) => {
