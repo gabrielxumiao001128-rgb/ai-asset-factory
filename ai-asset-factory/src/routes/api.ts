@@ -85,7 +85,7 @@ apiRoutes.post('/generate', async (c) => {
       return c.json({ error: 'mode 必须是 images、video 或 all' }, 400);
     }
 
-    const taskId = startTask(imageUrl, mode, scenes, size, style, copyStyle);
+    const taskId = await startTask(imageUrl, mode, scenes, size, style, copyStyle);
     return c.json({ taskId, message: '生成任务已启动', mode });
 
   } catch (error: any) {
@@ -97,9 +97,9 @@ apiRoutes.post('/generate', async (c) => {
  * GET /api/tasks/:taskId
  * 查询任务状态和结果
  */
-apiRoutes.get('/tasks/:taskId', (c) => {
+apiRoutes.get('/tasks/:taskId', async (c) => {
   const taskId = c.req.param('taskId');
-  const task = getTask(taskId);
+  const task = await getTask(taskId);
 
   if (!task) {
     return c.json({ error: '任务不存在' }, 404);
@@ -112,18 +112,18 @@ apiRoutes.get('/tasks/:taskId', (c) => {
  * GET /api/tasks/:taskId/events
  * SSE 实时推送任务进度
  */
-apiRoutes.get('/tasks/:taskId/events', (c) => {
+apiRoutes.get('/tasks/:taskId/events', async (c) => {
   const taskId = c.req.param('taskId');
 
   const stream = new ReadableStream({
-    start(controller) {
+    async start(controller) {
       const encoder = new TextEncoder();
 
       const send = (data: string) => {
         controller.enqueue(encoder.encode(`data: ${data}\n\n`));
       };
 
-      const history = getTaskEvents(taskId);
+      const history = await getTaskEvents(taskId);
       for (const event of history) {
         send(JSON.stringify(event));
       }
@@ -154,18 +154,18 @@ apiRoutes.get('/tasks/:taskId/events', (c) => {
  * GET /api/history
  * 获取历史记录列表
  */
-apiRoutes.get('/history', (c) => {
+apiRoutes.get('/history', async (c) => {
   const limit = parseInt(c.req.query('limit') || '20');
-  return c.json(getHistory(limit));
+  return c.json(await getHistory(limit));
 });
 
 /**
  * GET /api/history/:taskId
  * 获取单条历史记录
  */
-apiRoutes.get('/history/:taskId', (c) => {
+apiRoutes.get('/history/:taskId', async (c) => {
   const taskId = c.req.param('taskId');
-  const entry = getHistoryEntry(taskId);
+  const entry = await getHistoryEntry(taskId);
   if (!entry) {
     return c.json({ error: '记录不存在' }, 404);
   }
@@ -176,9 +176,9 @@ apiRoutes.get('/history/:taskId', (c) => {
  * POST /api/history/:taskId/regenerate
  * 基于历史记录重新生成
  */
-apiRoutes.post('/history/:taskId/regenerate', (c) => {
+apiRoutes.post('/history/:taskId/regenerate', async (c) => {
   const taskId = c.req.param('taskId');
-  const entry = getHistoryEntry(taskId);
+  const entry = await getHistoryEntry(taskId);
 
   if (!entry) {
     return c.json({ error: '记录不存在' }, 404);
@@ -189,7 +189,7 @@ apiRoutes.post('/history/:taskId/regenerate', (c) => {
   const size = (entry.size as SizeOption) || '1024*1024';
 
   // 原图路径可能在 /uploads/ 下，需要确认文件是否存在
-  const newTaskId = startTask(entry.originalImageUrl, mode, scenes, size);
+  const newTaskId = await startTask(entry.originalImageUrl, mode, scenes, size);
   return c.json({ taskId: newTaskId, message: '重新生成任务已启动', mode });
 });
 

@@ -21,31 +21,26 @@ interface HistoryEntry {
 /**
  * 保存任务历史记录
  */
-export function saveHistory(task: AssetPackage, scenes?: any[], mode?: string, size?: string) {
-  const db = getDb();
+export async function saveHistory(task: AssetPackage, scenes?: any[], mode?: string, size?: string) {
+  const db = await getDb();
 
-  // 将历史记录字段存储到 tasks 表的扩展字段中
-  db.prepare(`
-    UPDATE tasks SET
-      mode = @mode,
-      size = @size,
-      scenes_json = @scenes_json
-    WHERE id = @id
-  `).run({
-    id: task.taskId,
-    mode: mode || null,
-    size: size || null,
-    scenes_json: scenes && scenes.length > 0 ? JSON.stringify(scenes) : null,
-  });
+  await db.run(
+    `UPDATE tasks SET
+      mode = ?,
+      size = ?,
+      scenes_json = ?
+    WHERE id = ?`,
+    [mode || null, size || null, scenes && scenes.length > 0 ? JSON.stringify(scenes) : null, task.taskId]
+  );
 }
 
 /**
  * 获取历史记录列表
  */
-export function getHistory(limit = 20): HistoryEntry[] {
-  const db = getDb();
-  const rows = db.prepare(`
-    SELECT
+export async function getHistory(limit = 20): Promise<HistoryEntry[]> {
+  const db = await getDb();
+  const rows = await db.all(
+    `SELECT
       id as taskId,
       original_image_url as originalImageUrl,
       product_info_json,
@@ -59,10 +54,11 @@ export function getHistory(limit = 20): HistoryEntry[] {
       scenes_json
     FROM tasks
     ORDER BY created_at DESC
-    LIMIT @limit
-  `).all({ limit }) as any[];
+    LIMIT ?`,
+    [limit]
+  );
 
-  return rows.map(row => {
+  return rows.map((row: any) => {
     const images = row.images_json ? JSON.parse(row.images_json) : [];
     const productInfo = row.product_info_json ? JSON.parse(row.product_info_json) : undefined;
 
@@ -90,10 +86,10 @@ export function getHistory(limit = 20): HistoryEntry[] {
 /**
  * 获取单条历史记录
  */
-export function getHistoryEntry(taskId: string): HistoryEntry | undefined {
-  const db = getDb();
-  const row = db.prepare(`
-    SELECT
+export async function getHistoryEntry(taskId: string): Promise<HistoryEntry | undefined> {
+  const db = await getDb();
+  const row = await db.get(
+    `SELECT
       id as taskId,
       original_image_url as originalImageUrl,
       product_info_json,
@@ -106,8 +102,9 @@ export function getHistoryEntry(taskId: string): HistoryEntry | undefined {
       status,
       scenes_json
     FROM tasks
-    WHERE id = @id
-  `).get({ id: taskId }) as any;
+    WHERE id = ?`,
+    [taskId]
+  );
 
   if (!row) return undefined;
 

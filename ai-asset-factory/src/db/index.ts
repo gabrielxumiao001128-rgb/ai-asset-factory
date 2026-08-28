@@ -1,20 +1,22 @@
-import Database from 'better-sqlite3';
+import sqlite3 from 'sqlite3';
+import { open, Database } from 'sqlite';
 import { dbPath } from '../config.js';
 import { mkdirSync } from 'fs';
 import { dirname } from 'path';
 
-let db: Database.Database | null = null;
+let db: Database<sqlite3.Database, sqlite3.Statement> | null = null;
 
 /**
  * 获取 SQLite 数据库连接（单例）
  */
-export function getDb(): Database.Database {
+export async function getDb(): Promise<Database<sqlite3.Database, sqlite3.Statement>> {
   if (!db) {
-    // 确保数据库目录存在
     mkdirSync(dirname(dbPath), { recursive: true });
-    db = new Database(dbPath);
-    db.pragma('journal_mode = WAL');
-    initTables();
+    db = await open({
+      filename: dbPath,
+      driver: sqlite3.Database,
+    });
+    await initTables();
   }
   return db;
 }
@@ -22,10 +24,10 @@ export function getDb(): Database.Database {
 /**
  * 初始化数据库表结构
  */
-function initTables(): void {
+async function initTables(): Promise<void> {
   if (!db) return;
 
-  db.exec(`
+  await db.exec(`
     CREATE TABLE IF NOT EXISTS tasks (
       id TEXT PRIMARY KEY,
       status TEXT NOT NULL,
@@ -62,9 +64,9 @@ function initTables(): void {
 /**
  * 关闭数据库连接（用于优雅退出）
  */
-export function closeDb(): void {
+export async function closeDb(): Promise<void> {
   if (db) {
-    db.close();
+    await db.close();
     db = null;
   }
 }

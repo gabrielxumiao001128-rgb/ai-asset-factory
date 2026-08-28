@@ -5,24 +5,6 @@ import { getDb } from '../db/index.js';
 const eventListeners = new Map<string, (event: TaskEvent) => void>();
 
 /**
- * 将任务对象序列化为数据库记录
- */
-function taskToRow(task: AssetPackage) {
-  return {
-    id: task.taskId,
-    status: task.status,
-    original_image_url: task.originalImageUrl,
-    product_info_json: task.productInfo ? JSON.stringify(task.productInfo) : null,
-    copywriting_json: task.copywriting ? JSON.stringify(task.copywriting) : null,
-    images_json: task.images.length > 0 ? JSON.stringify(task.images) : null,
-    video_json: task.video ? JSON.stringify(task.video) : null,
-    error: task.error || null,
-    created_at: task.createdAt,
-    completed_at: task.completedAt || null,
-  };
-}
-
-/**
  * 将数据库记录反序列化为任务对象
  */
 function rowToTask(row: any): AssetPackage {
@@ -43,7 +25,7 @@ function rowToTask(row: any): AssetPackage {
 /**
  * 创建新任务
  */
-export function createTask(taskId: string, originalImageUrl: string): AssetPackage {
+export async function createTask(taskId: string, originalImageUrl: string): Promise<AssetPackage> {
   const task: AssetPackage = {
     taskId,
     status: 'pending',
@@ -52,16 +34,12 @@ export function createTask(taskId: string, originalImageUrl: string): AssetPacka
     createdAt: Date.now(),
   };
 
-  const db = getDb();
-  db.prepare(`
-    INSERT INTO tasks (id, status, original_image_url, images_json, created_at)
-    VALUES (@id, @status, @original_image_url, '[]', @created_at)
-  `).run({
-    id: taskId,
-    status: 'pending',
-    original_image_url: originalImageUrl,
-    created_at: task.createdAt,
-  });
+  const db = await getDb();
+  await db.run(
+    `INSERT INTO tasks (id, status, original_image_url, images_json, created_at)
+     VALUES (?, ?, ?, ?, ?)`,
+    [taskId, 'pending', originalImageUrl, '[]', task.createdAt]
+  );
 
   return task;
 }
@@ -69,26 +47,20 @@ export function createTask(taskId: string, originalImageUrl: string): AssetPacka
 /**
  * 更新任务状态
  */
-export function updateTaskStatus(
+export async function updateTaskStatus(
   taskId: string,
   status: TaskStatus,
   message?: string
-): void {
-  const db = getDb();
+): Promise<void> {
+  const db = await getDb();
   const timestamp = Date.now();
 
   // 更新任务状态
-  db.prepare(`UPDATE tasks SET status = @status WHERE id = @id`).run({
-    id: taskId,
-    status,
-  });
+  await db.run(`UPDATE tasks SET status = ? WHERE id = ?`, [status, taskId]);
 
   // 如果完成或失败，记录 completed_at
   if (status === 'completed' || status === 'failed') {
-    db.prepare(`UPDATE tasks SET completed_at = @ts WHERE id = @id`).run({
-      id: taskId,
-      ts: timestamp,
-    });
+    await db.run(`UPDATE tasks SET completed_at = ? WHERE id = ?`, [timestamp, taskId]);
   }
 
   // 插入事件
@@ -99,15 +71,11 @@ export function updateTaskStatus(
     timestamp,
   };
 
-  db.prepare(`
-    INSERT INTO task_events (task_id, status, message, timestamp)
-    VALUES (@task_id, @status, @message, @timestamp)
-  `).run({
-    task_id: taskId,
-    status,
-    message: message || '',
-    timestamp,
-  });
+  await db.run(
+    `INSERT INTO task_events (task_id, status, message, timestamp)
+     VALUES (?, ?, ?, ?)`,
+    [taskId, status, message || '', timestamp]
+  );
 
   // 通知 SSE 监听器
   const listener = eventListeners.get(taskId);
@@ -117,9 +85,9 @@ export function updateTaskStatus(
 /**
  * 获取任务完整信息
  */
-export function getTask(taskId: string): AssetPackage | undefined {
-  const db = getDb();
-  const row = db.prepare('SELECT * FROM tasks WHERE id = @id').get({ id: taskId }) as any;
+export async function getTask(taskId: string): Promise<AssetPackage | undefined> {
+  const db = await getDb();
+  const row = await db.get('SELECT * FROM tasks WHERE id = ?', [taskId]);
   if (!row) return undefined;
   return rowToTask(row);
 }
@@ -127,60 +95,62 @@ export function getTask(taskId: string): AssetPackage | undefined {
 /**
  * 更新任务的素材数据
  */
-export function updateTaskData(
+export async function updateTaskData(
   taskId: string,
   data: Partial<AssetPackage>
-): void {
-  const db = getDb();
+): Promise<void> {
+  const db = await getDb();
   const sets: string[] = [];
-  const params: Record<string, any> = { id: taskId };
+  const params: any[] = [];
 
   if (data.productInfo !== undefined) {
-    sets.push('product_info_json = @product_info_json');
-    params.product_info_json = data.productInfo ? JSON.stringify(data.productInfo) : null;
+    sets.push('product_info_json = ?');
+    params.push(data.productInfo ? JSON.stringify(data.productInfo) : null);
   }
   if (data.copywriting !== undefined) {
-    sets.push('copywriting_json = @copywriting_json');
-    params.copywriting_json = data.copywriting ? JSON.stringify(data.copywriting) : null;
+    sets.push('copywriting_json = ?');
+    params.push(data.copywriting ? JSON.stringify(data.copywriting) : null);
   }
   if (data.images !== undefined) {
-    sets.push('images_json = @images_json');
-    params.images_json = data.images.length > 0 ? JSON.stringify(data.images) : null;
+    sets.push('images_json = ?');
+    params.push(data.images.length > 0 ? JSON.stringify(data.images) : null);
   }
   if (data.video !== undefined) {
-    sets.push('video_json = @video_json');
-    params.video_json = data.video ? JSON.stringify(data.video) : null;
+    sets.push('video_json = ?');
+    params.push(data.video ? JSON.stringify(data.video) : null);
   }
   if (data.error !== undefined) {
-    sets.push('error = @error');
-    params.error = data.error || null;
+    sets.push('error = ?');
+    params.push(data.error || null);
   }
   if (data.status !== undefined) {
-    sets.push('status = @status');
-    params.status = data.status;
+    sets.push('status = ?');
+    params.push(data.status);
   }
   if (data.completedAt !== undefined) {
-    sets.push('completed_at = @completed_at');
-    params.completed_at = data.completedAt || null;
+    sets.push('completed_at = ?');
+    params.push(data.completedAt || null);
   }
 
   if (sets.length === 0) return;
 
-  db.prepare(`UPDATE tasks SET ${sets.join(', ')} WHERE id = @id`).run(params);
+  params.push(taskId);
+  await db.run(`UPDATE tasks SET ${sets.join(', ')} WHERE id = ?`, params);
 }
 
 /**
  * 获取任务事件历史
  */
-export function getTaskEvents(taskId: string): TaskEvent[] {
-  const db = getDb();
-  const rows = db.prepare(`
-    SELECT task_id as taskId, status, message, timestamp
-    FROM task_events
-    WHERE task_id = @task_id
-    ORDER BY timestamp ASC
-  `).all({ task_id: taskId }) as TaskEvent[];
-  return rows;
+export async function getTaskEvents(taskId: string): Promise<TaskEvent[]> {
+  const db = await getDb();
+  const rows = await db.all(
+    `SELECT task_id as taskId, status, message, timestamp
+     FROM task_events
+     WHERE task_id = ?
+     ORDER BY timestamp ASC`,
+    [taskId]
+  );
+  return rows as TaskEvent[];
 }
 
 /**
@@ -203,19 +173,19 @@ export function removeTaskListener(taskId: string): void {
 /**
  * 清理已完成超过 1 小时的任务（定期调用）
  */
-export function cleanupOldTasks(): void {
-  const db = getDb();
+export async function cleanupOldTasks(): Promise<void> {
+  const db = await getDb();
   const oneHourAgo = Date.now() - 3600 * 1000;
 
   // 删除已完成超过 1 小时的任务及其事件
-  db.prepare(`
-    DELETE FROM tasks
-    WHERE completed_at IS NOT NULL AND completed_at < @ts
-  `).run({ ts: oneHourAgo });
+  await db.run(
+    `DELETE FROM tasks WHERE completed_at IS NOT NULL AND completed_at < ?`,
+    [oneHourAgo]
+  );
 
   // 清理内存中的监听器
   for (const [id] of eventListeners) {
-    const row = db.prepare('SELECT completed_at FROM tasks WHERE id = @id').get({ id }) as any;
+    const row = await db.get('SELECT completed_at FROM tasks WHERE id = ?', [id]);
     if (!row || (row.completed_at && row.completed_at < oneHourAgo)) {
       eventListeners.delete(id);
     }

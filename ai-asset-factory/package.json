@@ -15,12 +15,12 @@
   "dependencies": {
     "@hono/node-server": "^2.1.1",
     "@imgly/background-removal": "^1.7.0",
-    "@types/better-sqlite3": "^9.6.0",
     "@types/node": "^26.3.0",
-    "better-sqlite3": "^13.0.3",
     "dotenv": "^17.4.2",
     "hono": "^4.13.4",
     "sharp": "^0.35.4",
+    "sqlite": "^5.1.1",
+    "sqlite3": "^6.0.1",
     "typescript": "^7.0.2"
   },
   "devDependencies": {
