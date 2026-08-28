@@ -1,0 +1,36 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build outputs
+dist/
+*.tsbuildinfo
+
+# Environment variables (NEVER commit real API keys!)
+.env
+.env.local
+.env.*.local
+
+# Database
+data/
+*.db
+*.db-shm
+*.db-wal
+
+# Uploads
+uploads/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo

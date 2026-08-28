@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: ai-asset-factory-api
+    runtime: node
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm run start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      - key: BASE_URL
+        value: https://ai-asset-factory-api.onrender.com
+      - key: DASHSCOPE_API_KEY
+        sync: false
+      - key: KLING_API_KEY
+        sync: false
+      - key: FRONTEND_URL
+        value: https://ai-asset-factory.netlify.app
+      - key: DB_PATH
+        value: ./data/app.db
+      - key: UPLOAD_DIR
+        value: ./uploads
