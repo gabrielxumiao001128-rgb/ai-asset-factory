@@ -1,4 +1,4 @@
-import { config, uploadPath } from '../config';
+import { config, uploadPath } from '../config.js';
 import { mkdirSync, writeFileSync, existsSync } from 'fs';
 import { join, extname } from 'path';
 

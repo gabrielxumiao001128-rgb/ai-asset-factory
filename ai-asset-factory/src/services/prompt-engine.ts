@@ -1,4 +1,4 @@
-import type { ProductInfo, PromptGroup, SceneSelection, ArtStyle } from '../types';
+import type { ProductInfo, PromptGroup, SceneSelection, ArtStyle } from '../types.js';
 
 // 风格描述词映射
 const STYLE_SUFFIXES: Record<ArtStyle, string> = {

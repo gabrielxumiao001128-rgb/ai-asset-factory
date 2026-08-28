@@ -1,7 +1,7 @@
 import sharp from 'sharp';
 import { existsSync } from 'fs';
 import { join } from 'path';
-import { uploadPath } from '../config';
+import { uploadPath } from '../config.js';
 
 /**
  * 纯 Node.js 抠图（洪水填充法）

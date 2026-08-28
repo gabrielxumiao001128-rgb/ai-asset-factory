@@ -1,8 +1,8 @@
-import { config } from '../config';
-import type { ProductInfo } from '../types';
+import { config } from '../config.js';
+import type { ProductInfo } from '../types.js';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
-import { uploadPath } from '../config';
+import { uploadPath } from '../config.js';
 
 /**
  * 调用 Qwen-VL 分析商品图片

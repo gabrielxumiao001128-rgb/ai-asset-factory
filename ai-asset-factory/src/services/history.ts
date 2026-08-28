@@ -1,5 +1,5 @@
-import { getDb } from '../db';
-import type { AssetPackage } from '../types';
+import { getDb } from '../db/index.js';
+import type { AssetPackage } from '../types.js';
 
 const MAX_HISTORY = 50;
 

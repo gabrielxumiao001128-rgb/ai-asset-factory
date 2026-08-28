@@ -1,7 +1,7 @@
 import sharp from 'sharp';
 import { join } from 'path';
 import { writeFileSync } from 'fs';
-import { uploadPath } from '../config';
+import { uploadPath } from '../config.js';
 
 /**
  * 把抠好的商品叠加到场景图上

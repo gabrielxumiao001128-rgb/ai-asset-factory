@@ -1,5 +1,5 @@
-import { config } from '../config';
-import type { GeneratedImage, GeneratedVideo } from '../types';
+import { config } from '../config.js';
+import type { GeneratedImage, GeneratedVideo } from '../types.js';
 
 // ============================================================
 // 图生视频：使用阿里云百炼/千问AI平台的 wan2.6-i2v-flash
@@ -59,7 +59,7 @@ export async function generateVideoWithWanx(
   const videoUrl = await pollVideoTask(taskId, onProgress);
 
   // 下载到本地
-  const { uploadPath } = await import('../config');
+  const { uploadPath } = await import('../config.js');
   const { mkdirSync, writeFileSync } = await import('fs');
   const { join } = await import('path');
   mkdirSync(uploadPath, { recursive: true });

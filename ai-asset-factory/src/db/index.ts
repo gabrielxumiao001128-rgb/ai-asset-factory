@@ -1,5 +1,5 @@
 import Database from 'better-sqlite3';
-import { dbPath } from '../config';
+import { dbPath } from '../config.js';
 import { mkdirSync } from 'fs';
 import { dirname } from 'path';
 

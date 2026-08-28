@@ -2,8 +2,8 @@ import { serve } from '@hono/node-server';
 import { serveStatic } from '@hono/node-server/serve-static';
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
-import { apiRoutes } from './routes/api';
-import { config } from './config';
+import { apiRoutes } from './routes/api.js';
+import { config } from './config.js';
 
 const app = new Hono();
 

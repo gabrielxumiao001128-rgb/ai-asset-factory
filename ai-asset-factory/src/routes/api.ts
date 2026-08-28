@@ -1,11 +1,11 @@
 import { Hono } from 'hono';
-import { startTask } from '../workflow/pipeline';
-import { getTask, getTaskEvents, onTaskEvent, removeTaskListener } from '../queue/task-manager';
-import { getHistory, getHistoryEntry } from '../services/history';
-import { saveUploadedImage, ensureUploadDir, getLocalUrl } from '../services/file-store';
+import { startTask } from '../workflow/pipeline.js';
+import { getTask, getTaskEvents, onTaskEvent, removeTaskListener } from '../queue/task-manager.js';
+import { getHistory, getHistoryEntry } from '../services/history.js';
+import { saveUploadedImage, ensureUploadDir, getLocalUrl } from '../services/file-store.js';
 import { serveStatic } from '@hono/node-server/serve-static';
-import type { GenerateMode, SceneSelection, SizeOption, ArtStyle, CopyStyle } from '../types';
-import { analyzeReferenceImage } from '../services/reference-analyzer';
+import type { GenerateMode, SceneSelection, SizeOption, ArtStyle, CopyStyle } from '../types.js';
+import { analyzeReferenceImage } from '../services/reference-analyzer.js';
 
 export const apiRoutes = new Hono();
 

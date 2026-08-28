@@ -1,17 +1,17 @@
 import { randomUUID } from 'crypto';
-import { analyzeProduct } from '../services/vision';
-import { generatePrompts } from '../services/prompt-engine';
-import { generateImages } from '../services/image-gen';
-import { generateVideoWithWanx } from '../services/video-gen';
-import { generateCopywriting } from '../services/copywriting';
-import { saveHistory } from '../services/history';
+import { analyzeProduct } from '../services/vision.js';
+import { generatePrompts } from '../services/prompt-engine.js';
+import { generateImages } from '../services/image-gen.js';
+import { generateVideoWithWanx } from '../services/video-gen.js';
+import { generateCopywriting } from '../services/copywriting.js';
+import { saveHistory } from '../services/history.js';
 import {
   createTask,
   updateTaskStatus,
   updateTaskData,
   getTask,
-} from '../queue/task-manager';
-import type { GenerateMode, SceneSelection, SizeOption, ArtStyle, CopyStyle } from '../types';
+} from '../queue/task-manager.js';
+import type { GenerateMode, SceneSelection, SizeOption, ArtStyle, CopyStyle } from '../types.js';
 
 /**
  * 完整的素材生成流水线

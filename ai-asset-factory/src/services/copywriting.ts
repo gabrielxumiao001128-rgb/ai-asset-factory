@@ -1,5 +1,5 @@
-import { config } from '../config';
-import type { ProductInfo, CopywritingSet, CopyStyle } from '../types';
+import { config } from '../config.js';
+import type { ProductInfo, CopywritingSet, CopyStyle } from '../types.js';
 
 /**
  * 基于商品信息生成 AI 营销文案

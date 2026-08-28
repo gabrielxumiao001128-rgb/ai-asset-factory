@@ -1,5 +1,5 @@
-import { config, uploadPath } from '../config';
-import type { ReferenceAnalysis, ArtStyle, SizeOption } from '../types';
+import { config, uploadPath } from '../config.js';
+import type { ReferenceAnalysis, ArtStyle, SizeOption } from '../types.js';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
 

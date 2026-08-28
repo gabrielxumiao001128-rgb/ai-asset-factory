@@ -1,5 +1,5 @@
-import type { AssetPackage, TaskStatus, TaskEvent } from '../types';
-import { getDb } from '../db';
+import type { AssetPackage, TaskStatus, TaskEvent } from '../types.js';
+import { getDb } from '../db/index.js';
 
 // SSE 实时推送监听器（必须在内存中，无法持久化）
 const eventListeners = new Map<string, (event: TaskEvent) => void>();

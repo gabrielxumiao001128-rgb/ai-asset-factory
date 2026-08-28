@@ -1,5 +1,5 @@
-import { config, uploadPath } from '../config';
-import type { GeneratedImage, PromptGroup } from '../types';
+import { config, uploadPath } from '../config.js';
+import type { GeneratedImage, PromptGroup } from '../types.js';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
 
